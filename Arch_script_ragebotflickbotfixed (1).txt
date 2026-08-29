@@ -1,3 +1,61 @@
+task.wait(10)
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = Players.LocalPlayer
+
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+
+local function rejoin()
+    print("rejoining")
+    task.spawn(function()
+        task.wait(0.05)
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
+    end)
+end
+
+LocalPlayer.AncestryChanged:Connect(function(_, parent)
+    if not parent then
+        print("kicked")
+        rejoin()
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if plr == LocalPlayer then
+        print("kicked")
+        rejoin()
+    end
+end)
+
+game:GetService("RunService").Heartbeat:Connect(function()
+    if not LocalPlayer.Parent or not LocalPlayer.Character or game:GetService("CoreGui"):FindFirstChild("RobloxKickScreen") then
+        print("disconnected")
+        rejoin()
+    end
+end)
+
+game:GetService("GuiService").ErrorMessageChanged:Connect(function(msg)
+    if msg and msg:lower():find("kick") or msg:lower():find("ban") or msg:lower():find("disconnect") then
+        print("kicked")
+        rejoin()
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if not LocalPlayer or not LocalPlayer.Parent then
+            print("localplayer gone")
+            rejoin()
+            break
+        end
+    end
+end)
+
+print("loaded")
+
 local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
     if mt and typeof(mt) == "table" and rawget(mt, "__mode") == "kv" then
         local tr = debug.traceback()
